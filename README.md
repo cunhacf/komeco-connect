@@ -1,6 +1,6 @@
 # Komeco Connect (Home Assistant Custom Integration)
 
-Unofficial Home Assistant integration for Komeco cloud devices using reverse-engineered cloud APIs and AWS IoT shadow updates.
+Unofficial Home Assistant integration for Komeco devices.
 
 ## Disclaimer
 
@@ -24,11 +24,6 @@ Unofficial Home Assistant integration for Komeco cloud devices using reverse-eng
   - flow, productivity, consumption, mode, error code
 - Realtime MQTT-over-WebSocket shadow updates for near-instant state changes.
 - Polling fallback (`30s` default) for resilience.
-
-## Current Scope
-
-- Current implemented device support remains **gas heater** only.
-- Integration domain/folder is now `komeco_connect`.
 
 ## Value Source Priority
 
@@ -55,15 +50,6 @@ Short command overrides are applied to reduce flicker from delayed history refre
 2. Restart Home Assistant.
 3. Go to **Settings -> Devices & Services -> Add Integration**.
 4. Add **Komeco Connect** and enter email/password.
-
-## Breaking Change: Domain Rename
-
-- Old domain `komeco_gas_heater` was removed in `0.3.0`.
-- Existing installations must:
-  1. Remove the old integration entry in Home Assistant.
-  2. Remove any old `custom_components/komeco_gas_heater` files.
-  3. Install `komeco_connect` via HACS (or manual install above).
-  4. Add the integration again and re-authenticate.
 
 ## Token Handling
 
