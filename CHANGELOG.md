@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 (2026-03-12)
+
+- Breaking change: renamed integration domain/folder from `komeco_gas_heater` to `komeco_connect`.
+- Restructured repository to HACS canonical layout under `custom_components/komeco_connect`.
+- Added HACS metadata and CI/release automation for validation and tagged releases.
+- Added manifest `issue_tracker` and updated logger namespace to `custom_components.komeco_connect`.
+- Existing users must remove the old integration and re-add using the new domain.
+
 ## 0.2.1 (2026-03-12)
 
 - Renamed user-facing integration name to **Komeco Connect**.

@@ -2,8 +2,7 @@
 
 from datetime import timedelta
 
-# Keep domain stable for backward compatibility with existing HA installs.
-DOMAIN = "komeco_gas_heater"
+DOMAIN = "komeco_connect"
 
 CONF_EMAIL = "email"
 CONF_PASSWORD = "password"

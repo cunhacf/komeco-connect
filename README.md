@@ -27,9 +27,8 @@ Unofficial Home Assistant integration for Komeco cloud devices using reverse-eng
 
 ## Current Scope
 
-- The integration name is now generic (**Komeco Connect**) to support future expansion.
 - Current implemented device support remains **gas heater** only.
-- Internal domain/folder is still `komeco_gas_heater` for backward compatibility with existing installs.
+- Integration domain/folder is now `komeco_connect`.
 
 ## Value Source Priority
 
@@ -41,12 +40,30 @@ For control state fields (`switch`, `temp_set`, `zero_cold_water_mode`, `zero_co
 
 Short command overrides are applied to reduce flicker from delayed history refreshes.
 
-## Installation
+## Installation (HACS - Recommended)
 
-1. Put `custom_components/komeco_gas_heater` in your Home Assistant config directory.
+1. In Home Assistant, open **HACS -> Integrations -> Custom repositories**.
+2. Add `https://github.com/cunhacf/komeco-connect` as type **Integration**.
+3. Search for **Komeco Connect** in HACS and install.
+4. Restart Home Assistant.
+5. Go to **Settings -> Devices & Services -> Add Integration**.
+6. Add **Komeco Connect** and enter email/password.
+
+## Manual Installation
+
+1. Copy `custom_components/komeco_connect` from this repo to your Home Assistant config directory under `custom_components/komeco_connect`.
 2. Restart Home Assistant.
 3. Go to **Settings -> Devices & Services -> Add Integration**.
 4. Add **Komeco Connect** and enter email/password.
+
+## Breaking Change: Domain Rename
+
+- Old domain `komeco_gas_heater` was removed in `0.3.0`.
+- Existing installations must:
+  1. Remove the old integration entry in Home Assistant.
+  2. Remove any old `custom_components/komeco_gas_heater` files.
+  3. Install `komeco_connect` via HACS (or manual install above).
+  4. Add the integration again and re-authenticate.
 
 ## Token Handling
 
@@ -61,7 +78,7 @@ Add this to `configuration.yaml` to enable integration debug logs:
 ```yaml
 logger:
   logs:
-    custom_components.komeco_gas_heater: debug
+    custom_components.komeco_connect: debug
 ```
 
 Debug coverage includes:
