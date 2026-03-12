@@ -1,0 +1,12 @@
+{
+  "domain": "komeco_gas_heater",
+  "name": "Komeco Connect",
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "https://github.com/cunhacf/komeco-connect/blob/main/README.md",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "loggers": ["custom_components.komeco_gas_heater"],
+  "requirements": ["pycryptodome>=3.21.0", "pycognito>=2024.5.1", "boto3>=1.35.0", "paho-mqtt>=2.1.0"],
+  "version": "0.2.1"
+}

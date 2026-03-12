@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.python-version
+.venv/
+venv/
+env/
+
+# Tooling / editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build / release artifacts
+dist/
+build/
+*.zip
+
+# Home Assistant local runtime files
+.storage/
+home-assistant.log*
+deps/
+tts/

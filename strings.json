@@ -1,0 +1,20 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Komeco Connect",
+        "description": "Use your Komeco account email and password. Supported devices are auto-discovered (currently gas heater only).",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Komeco API",
+      "invalid_auth": "Authentication failed",
+      "no_devices": "No supported Komeco device was found for this integration",
+      "unknown": "Unexpected error"
+    }
+  }
+}
