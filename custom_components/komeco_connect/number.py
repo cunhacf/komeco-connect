@@ -27,7 +27,7 @@ async def async_setup_entry(
                 command_key="temp_set",
                 name="Target Temperature",
                 icon="mdi:thermometer",
-                minimum=30,
+                minimum=35,
                 maximum=60,
                 step=1,
                 unit=UnitOfTemperature.CELSIUS,

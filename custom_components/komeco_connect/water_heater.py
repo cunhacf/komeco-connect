@@ -36,7 +36,7 @@ class KomecoWaterHeater(KomecoEntity, WaterHeaterEntity):
     _attr_name = "Heater"
     _attr_supported_features = WaterHeaterEntityFeature.TARGET_TEMPERATURE | WaterHeaterEntityFeature.ON_OFF
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
-    _attr_min_temp = 30
+    _attr_min_temp = 35
     _attr_max_temp = 60
     _attr_target_temperature_step = 1
 
