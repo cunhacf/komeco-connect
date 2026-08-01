@@ -16,6 +16,7 @@ Unofficial Home Assistant integration for Komeco devices.
   - `water_heater` with `switch` and `temp_set`.
   - `switch` for power.
   - `number` for `temp_set` and model-dependent `zero_cold_water_mode`.
+  - app-style temperature presets, with five editable preset values and a `Temperature Preset` select.
   - `binary_sensor` for model-dependent `zero_cold_water_mode_status`.
 - Telemetry entities from AWS IoT shadow (model-dependent), including:
   - connectivity
@@ -82,10 +83,12 @@ Debug coverage includes:
 ## Known Limitations
 
 - Some models do not expose `zero_cold_water_mode` fields in cloud shadow/history; these entities will be unavailable.
+- Presets are local settings in the official app, not cloud/device fields. Home Assistant starts with the same defaults and persists its own edits independently from the app.
+- The raw shadow `mode` value is exposed as `Device Mode Code`; the official app does not interpret this firmware value, and it is unrelated to temperature presets.
 - "Last Use" consumption entities represent the newest completed heater-use session, not a lifetime cumulative total.
 - "Today"/"This Month" totals are summed over `/getDataset?name=daily` buckets using the device's local-clock day/month window; they reset at the period rollover.
 - Dataset field names are misleading: `gas_consumption_m3_s` is a **total in m³** per bucket (not m³/s) and `water_L_s` is **total liters** (not L/s). The `_s` reads as "sum".
 - The raw shadow `consumption_gas`/`consumption_water` fields are vestigial — the official app only references them in mock data and live devices report a constant `1`, so they are no longer surfaced as sensors.
-- The dataset endpoints may return an empty list; the coordinator keeps the previous totals until fresh data arrives.
+- A successful empty period dataset is exposed as zero consumption; request failures remain unavailable.
 - Backend command endpoint path is `send-commmand` (three `m`) and must remain unchanged.
 - `tuyaId` seen in metadata is not directly usable for local Tuya control in this integration.

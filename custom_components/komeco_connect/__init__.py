@@ -22,6 +22,7 @@ from .const import (
     PLATFORMS,
 )
 from .coordinator import KomecoDataUpdateCoordinator
+from .presets import KomecoPresetStore
 from .realtime import KomecoRealtimeListener
 
 KomecoConfigEntry = ConfigEntry
@@ -55,6 +56,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: KomecoConfigEntry) -> bo
     hass.data[DOMAIN][entry.entry_id] = {
         "api": api,
         "coordinator": coordinator,
+        "presets": KomecoPresetStore(hass, entry),
         "realtime": realtime,
     }
 

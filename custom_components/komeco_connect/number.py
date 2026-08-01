@@ -11,6 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .entity import KomecoEntity
+from .presets import EDITABLE_PRESETS, KomecoPreset, KomecoPresetStore
 
 
 async def async_setup_entry(
@@ -19,31 +20,35 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Komeco number entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
-    async_add_entities(
-        [
-            KomecoCommandNumber(
-                coordinator=coordinator,
-                command_key="temp_set",
-                name="Target Temperature",
-                icon="mdi:thermometer",
-                minimum=35,
-                maximum=60,
-                step=1,
-                unit=UnitOfTemperature.CELSIUS,
-            ),
-            KomecoCommandNumber(
-                coordinator=coordinator,
-                command_key="zero_cold_water_mode",
-                name="Zero Cold Water Mode",
-                icon="mdi:tune-variant",
-                minimum=0,
-                maximum=10,
-                step=1,
-                unit=None,
-            ),
-        ]
+    runtime = hass.data[DOMAIN][entry.entry_id]
+    coordinator = runtime["coordinator"]
+    entities: list[NumberEntity] = [
+        KomecoCommandNumber(
+            coordinator=coordinator,
+            command_key="temp_set",
+            name="Target Temperature",
+            icon="mdi:thermometer",
+            minimum=35,
+            maximum=60,
+            step=1,
+            unit=UnitOfTemperature.CELSIUS,
+        ),
+        KomecoCommandNumber(
+            coordinator=coordinator,
+            command_key="zero_cold_water_mode",
+            name="Zero Cold Water Mode",
+            icon="mdi:tune-variant",
+            minimum=0,
+            maximum=10,
+            step=1,
+            unit=None,
+        ),
+    ]
+    entities.extend(
+        KomecoPresetNumber(coordinator, runtime["presets"], preset)
+        for preset in EDITABLE_PRESETS
     )
+    async_add_entities(entities)
 
 
 class KomecoCommandNumber(KomecoEntity, NumberEntity):
@@ -99,3 +104,37 @@ class KomecoCommandNumber(KomecoEntity, NumberEntity):
             switch = self.coordinator.data.get("command_values", {}).get("switch")
             payload["switch"] = True if switch is None else bool(switch)
         await self.coordinator.async_send_command(payload)
+
+
+class KomecoPresetNumber(KomecoEntity, NumberEntity):
+    """Locally persisted editable app preset."""
+
+    _attr_native_min_value = 35
+    _attr_native_max_value = 60
+    _attr_native_step = 1
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+
+    def __init__(
+        self,
+        coordinator,
+        store: KomecoPresetStore,
+        preset: KomecoPreset,
+    ) -> None:
+        super().__init__(coordinator)
+        self._store = store
+        self._preset = preset
+        self._attr_name = f"{preset.label} Temperature"
+        self._attr_icon = preset.icon
+        self._attr_unique_id = (
+            f"{coordinator.api.device_id}_{preset.slug}_temperature"
+        )
+
+    @property
+    def native_value(self) -> float:
+        """Return the locally configured preset temperature."""
+        return float(self._store.temperatures[self._preset.preset_id])
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Persist an app-style preset without sending it to the heater."""
+        self._store.set_temperature(self._preset.preset_id, int(round(value)))
+        self.coordinator.async_update_listeners()

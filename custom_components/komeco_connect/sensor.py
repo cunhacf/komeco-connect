@@ -13,6 +13,7 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature, UnitOfVolume
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 import homeassistant.util.dt as dt_util
 
@@ -30,7 +31,7 @@ _SHADOW_SENSOR_ICONS: dict[str, str] = {
 
 _SHADOW_SENSOR_NAMES: dict[str, str] = {
     "error_code": "Error Code",
-    "mode": "Mode",
+    "mode": "Device Mode Code",
     "temp_current_input": "Water Inlet Temperature",
     "temp_current_output": "Water Outlet Temperature",
     "water_flow_current": "Water Flow Current",
@@ -190,6 +191,8 @@ class KomecoShadowValueSensor(KomecoEntity, SensorEntity):
         self._attr_icon = _SHADOW_SENSOR_ICONS.get(key, "mdi:gauge")
         self._attr_native_unit_of_measurement = _SHADOW_SENSOR_UNITS.get(key)
         self._attr_device_class = _SHADOW_SENSOR_DEVICE_CLASS.get(key)
+        if key == "mode":
+            self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
     @property
     def native_value(self) -> Any:

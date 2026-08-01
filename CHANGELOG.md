@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026.8.1.1 (2026-08-01)
+
+- Show zero totals for successful empty consumption periods.
+- Add persistent temperature presets matching the official app.
+- Distinguish the temperature preset selector from the raw device mode code.
+
 ## 0.3.1 (2026-06-14)
 
 - Added last-use gas and water consumption sensors from `/getGasHeaterUse`.

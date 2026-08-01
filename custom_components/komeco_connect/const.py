@@ -13,7 +13,7 @@ CONF_ID_TOKEN = "id_token"
 CONF_ACCESS_TOKEN = "access_token"
 CONF_SUB = "sub"
 
-PLATFORMS = ["water_heater", "switch", "number", "sensor", "binary_sensor"]
+PLATFORMS = ["water_heater", "switch", "number", "select", "sensor", "binary_sensor"]
 
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=30)
 
