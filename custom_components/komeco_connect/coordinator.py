@@ -67,6 +67,11 @@ class KomecoDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             data["current_temperature"] = previous.get("current_temperature")
         if data.get("last_command_at") is None and previous.get("last_command_at") is not None:
             data["last_command_at"] = previous.get("last_command_at")
+        if not data.get("latest_usage") and previous.get("latest_usage"):
+            data["latest_usage"] = previous.get("latest_usage")
+        for usage_key in ("today_usage", "month_usage"):
+            if not data.get(usage_key) and previous.get(usage_key):
+                data[usage_key] = previous.get(usage_key)
         self._apply_command_overrides(data)
 
         self._persist_tokens_if_needed()

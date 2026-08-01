@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 (2026-06-14)
+
+- Added last-use gas and water consumption sensors from `/getGasHeaterUse`.
+- Added correct units to last-use sensors: gas in `m³` and water in liters.
+- Renamed existing unitless shadow consumption sensors to clarify that they are raw values.
+
 ## 0.3.0 (2026-03-12)
 
 - Breaking change: renamed integration domain/folder from `komeco_gas_heater` to `komeco_connect`.

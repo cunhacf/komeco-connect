@@ -367,10 +367,23 @@ class KomecoApiClient:
             path="/commandHistory-get",
             query={"placeId": self.place_id},
         )
+        usage_resp: dict[str, Any] = {}
+        try:
+            usage_resp = await self._async_signed_request(
+                method="GET",
+                endpoint_name="prod-dataset",
+                path="/getGasHeaterUse",
+                query={"deviceId": self.device_id},
+            )
+        except KomecoApiError as err:
+            _LOGGER.debug("Usage dataset read failed device_id=%s err=%s", self.device_id, err)
+        today_usage = await self._async_fetch_period_usage("today")
+        month_usage = await self._async_fetch_period_usage("month")
         shadow_reported, shadow_raw, shadow_thing_name, shadow_error = await self._async_fetch_shadow_reported()
 
         device_body = self._extract_body(device_resp)
         dashboard_body = self._extract_body(dashboard_resp)
+        latest_usage = self._extract_latest_usage(self._extract_body(usage_resp))
         history_items = self._extract_history_items(history_resp)
 
         command_values = self._extract_command_values(
@@ -396,6 +409,9 @@ class KomecoApiClient:
         result = {
             "device": device_body if isinstance(device_body, dict) else {},
             "dashboard": dashboard_body if isinstance(dashboard_body, dict) else {},
+            "latest_usage": latest_usage,
+            "today_usage": today_usage,
+            "month_usage": month_usage,
             "command_values": command_values,
             "supported_command_keys": supported_command_keys,
             "current_temperature": current_temp,
@@ -408,11 +424,12 @@ class KomecoApiClient:
             "shadow_error": shadow_error,
         }
         _LOGGER.debug(
-            "State fetch complete device_id=%s thing=%s temp=%s command_keys=%s shadow_error=%s",
+            "State fetch complete device_id=%s thing=%s temp=%s command_keys=%s latest_usage_timestamp=%s shadow_error=%s",
             self.device_id,
             shadow_thing_name,
             result.get("current_temperature"),
             sorted(result.get("command_values", {}).keys()) if isinstance(result.get("command_values"), dict) else [],
+            latest_usage.get("timestamp"),
             shadow_error,
         )
         return result
@@ -606,6 +623,137 @@ class KomecoApiClient:
             if isinstance(reported, dict):
                 return reported
         return {}
+
+    @staticmethod
+    def _extract_usage_records(value: Any) -> list[dict[str, Any]]:
+        """Return the list of usage/bucket records from a dataset response.
+
+        The dataset endpoints (``getGasHeaterUse`` and ``getDataset``) return either
+        a bare list of records or a ``{value|data|items: [...]}`` wrapper. Each usable
+        record carries at least ``gas_consumption_m3_s`` or ``water_L_s``.
+        """
+        candidates: Any = value
+        if isinstance(value, dict):
+            for key in ("value", "data", "items"):
+                nested = value.get(key)
+                if isinstance(nested, list):
+                    candidates = nested
+                    break
+
+        if not isinstance(candidates, list):
+            return []
+
+        return [
+            item
+            for item in candidates
+            if isinstance(item, dict)
+            and ("gas_consumption_m3_s" in item or "water_L_s" in item)
+        ]
+
+    @classmethod
+    def _extract_latest_usage(cls, value: Any) -> dict[str, Any]:
+        """Return the newest valid getGasHeaterUse session."""
+        usage_items = cls._extract_usage_records(value)
+        if not usage_items:
+            return {}
+
+        def _timestamp(item: dict[str, Any]) -> float:
+            raw = item.get("timestamp")
+            if isinstance(raw, (int, float)):
+                return float(raw)
+            if isinstance(raw, str):
+                try:
+                    return float(raw.strip())
+                except ValueError:
+                    return 0.0
+            return 0.0
+
+        return dict(max(usage_items, key=_timestamp))
+
+    @classmethod
+    def _aggregate_usage_records(cls, value: Any) -> dict[str, Any]:
+        """Sum dataset bucket records into period totals.
+
+        Each ``getDataset`` bucket is already aggregated by the backend; we add the
+        buckets in the requested window together. Note the misleading field names:
+        ``gas_consumption_m3_s`` is a total volume in m³ (not m³/s) and ``water_L_s``
+        is a total in liters (not L/s).
+        """
+        records = cls._extract_usage_records(value)
+        if not records:
+            return {}
+
+        gas_total = 0.0
+        water_total = 0.0
+        usage_min_total = 0.0
+        ignitions_total = 0
+        for item in records:
+            gas = item.get("gas_consumption_m3_s")
+            if isinstance(gas, (int, float)) and not isinstance(gas, bool):
+                gas_total += float(gas)
+            water = item.get("water_L_s")
+            if isinstance(water, (int, float)) and not isinstance(water, bool):
+                water_total += float(water)
+            usage_min = item.get("usage_time_min")
+            if isinstance(usage_min, (int, float)) and not isinstance(usage_min, bool):
+                usage_min_total += float(usage_min)
+            ignitions = item.get("turned_on_times")
+            if isinstance(ignitions, (int, float)) and not isinstance(ignitions, bool):
+                ignitions_total += int(ignitions)
+
+        return {
+            "gas_consumption_m3": round(gas_total, 4),
+            "water_l": round(water_total, 2),
+            "usage_time_min": round(usage_min_total, 2),
+            "turned_on_times": ignitions_total,
+            "sessions": len(records),
+        }
+
+    @staticmethod
+    def _period_bounds(period: str) -> tuple[int, int]:
+        """Return [start, end) unix-second bounds for a period in local time.
+
+        Mirrors the official app, which derives day/month windows from the device's
+        local clock. ``getDataset`` expects seconds for the daily/monthly/yearly names.
+        """
+        now = dt.datetime.now().astimezone()
+        start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        if period == "today":
+            start = start_of_day
+            end = start + dt.timedelta(days=1)
+        elif period == "month":
+            start = start_of_day.replace(day=1)
+            if start.month == 12:
+                end = start.replace(year=start.year + 1, month=1)
+            else:
+                end = start.replace(month=start.month + 1)
+        else:
+            raise ValueError(f"Unknown period: {period}")
+        return int(start.timestamp()), int(end.timestamp())
+
+    async def _async_fetch_period_usage(self, period: str) -> dict[str, Any]:
+        """Fetch and aggregate getDataset daily buckets for a period."""
+        if not self.device_id:
+            return {}
+        start, end = self._period_bounds(period)
+        try:
+            resp = await self._async_signed_request(
+                method="GET",
+                endpoint_name="prod-dataset",
+                path="/getDataset",
+                query={
+                    "name": "daily",
+                    "deviceId": self.device_id,
+                    "start": str(start),
+                    "end": str(end),
+                },
+            )
+        except KomecoApiError as err:
+            _LOGGER.debug("Period usage read failed period=%s device_id=%s err=%s", period, self.device_id, err)
+            return {}
+        totals = self._aggregate_usage_records(self._extract_body(resp))
+        _LOGGER.debug("Period usage period=%s device_id=%s totals=%s", period, self.device_id, totals)
+        return totals
 
     def _extract_history_items(self, response: dict[str, Any]) -> list[dict[str, Any]]:
         body = self._extract_body(response)

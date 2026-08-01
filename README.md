@@ -21,7 +21,10 @@ Unofficial Home Assistant integration for Komeco devices.
   - connectivity
   - flame/motor/water/antifreeze states
   - temperatures (inlet/outlet/setpoint)
-  - flow, productivity, consumption, mode, error code
+  - flow, productivity, mode, error code
+- Gas and water consumption:
+  - "Last Use" gas (`m³`) and water (liters) from the newest `/getGasHeaterUse` session bucket, with usage time and ignition count as attributes
+  - "Today" and "This Month" totals aggregated from `/getDataset?name=daily`, exposed as `gas`/`water` device-class sensors (`TOTAL_INCREASING`) so they feed the HA Energy dashboard
 - Realtime MQTT-over-WebSocket shadow updates for near-instant state changes.
 - Polling fallback (`30s` default) for resilience.
 
@@ -79,5 +82,10 @@ Debug coverage includes:
 ## Known Limitations
 
 - Some models do not expose `zero_cold_water_mode` fields in cloud shadow/history; these entities will be unavailable.
+- "Last Use" consumption entities represent the newest completed heater-use session, not a lifetime cumulative total.
+- "Today"/"This Month" totals are summed over `/getDataset?name=daily` buckets using the device's local-clock day/month window; they reset at the period rollover.
+- Dataset field names are misleading: `gas_consumption_m3_s` is a **total in m³** per bucket (not m³/s) and `water_L_s` is **total liters** (not L/s). The `_s` reads as "sum".
+- The raw shadow `consumption_gas`/`consumption_water` fields are vestigial — the official app only references them in mock data and live devices report a constant `1`, so they are no longer surfaced as sensors.
+- The dataset endpoints may return an empty list; the coordinator keeps the previous totals until fresh data arrives.
 - Backend command endpoint path is `send-commmand` (three `m`) and must remain unchanged.
 - `tuyaId` seen in metadata is not directly usable for local Tuya control in this integration.
