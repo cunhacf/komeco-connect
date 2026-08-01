@@ -681,7 +681,14 @@ class KomecoApiClient:
         """
         records = cls._extract_usage_records(value)
         if not records:
-            return {}
+            empty_dataset = isinstance(value, list) and not value
+            if isinstance(value, dict):
+                empty_dataset = any(
+                    isinstance(value.get(key), list) and not value[key]
+                    for key in ("value", "data", "items")
+                )
+            if not empty_dataset:
+                return {}
 
         gas_total = 0.0
         water_total = 0.0

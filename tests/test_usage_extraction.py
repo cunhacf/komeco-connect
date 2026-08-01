@@ -137,8 +137,21 @@ class PeriodAggregationTests(unittest.TestCase):
         self.assertEqual(totals["water_l"], 10.0)
         self.assertEqual(totals["sessions"], 1)
 
-    def test_empty_for_no_records(self) -> None:
-        self.assertEqual(api.KomecoApiClient._aggregate_usage_records([]), {})
+    def test_empty_dataset_returns_zero_totals(self) -> None:
+        expected = {
+            "gas_consumption_m3": 0.0,
+            "water_l": 0.0,
+            "usage_time_min": 0.0,
+            "turned_on_times": 0,
+            "sessions": 0,
+        }
+
+        self.assertEqual(api.KomecoApiClient._aggregate_usage_records([]), expected)
+        self.assertEqual(
+            api.KomecoApiClient._aggregate_usage_records({"value": []}), expected
+        )
+
+    def test_empty_for_invalid_records(self) -> None:
         self.assertEqual(
             api.KomecoApiClient._aggregate_usage_records([{"message": "nope"}]), {}
         )
